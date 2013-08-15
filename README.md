@@ -1,7 +1,9 @@
 blupy-enymate
 =============
 
-What is it? A python script to read the enymate sensor device through bluetooth.
+What is it? An enymate reader for Linux. This is a python script to read the
+enymate sensor device through bluetooth. This Linux enymate reader allows you
+to automate enymate readout, for instande through a raspberry pi.
 Purpose: get data from enymate device and store it into a mysql database for
  later processing and visualisation. A python learning project for its creater.
 
