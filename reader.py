@@ -5,6 +5,8 @@
 # command. After that it keeps on receiving data and printing it
 # until you kill it.
 
+# License: GPL v3 - details in LICENSE.txt
+
 import serial
 import string
 import time
@@ -34,7 +36,7 @@ def analyse(receivedData):
 	#byte 10: altijd x41
 	#byte 11: status byte. onbekend wat we daar mee moeten.
 
-	print " Entering analyse"
+	#print " Entering analyse"
 	#for x in receivedData:
 	#	print x
 
@@ -56,15 +58,31 @@ def analyse(receivedData):
 		return
 	
 	if (type=="ok"):
-		print "sensor number is: %s" % receivedData[3].encode('hex')
+
+		b_data=bytearray(receivedData)
+
+		#clear bit 7 os MSB because it's reserved for energy export,
+		# although the device can't measure that.
+		#print "debug before: %s %s %s" % (b_data[6], b_data[7], b_data[8])
+		b_data[6] = b_data[6] & 0b01111111
+		#print "debug after: %s %s %s" % (b_data[6], b_data[7], b_data[8])
+
+		impulsFactor = (256 * b_data[4] ) + b_data[5]
+		#print "impulsfactor= %s" % impulsFactor
+
+		timeInterval = 2.028 * ( (256 * 256 * b_data[6]) + ( 256 * b_data[7]) + b_data[8] )
+		#print "timeinterval= %s" % timeInterval
+
+		#print "sensor number is: %s" % receivedData[3].encode('hex')
 		if ( b'\x41' <= receivedData[3] <= b'\x45' ):
-			print "this is a water sensor"
+			value = 3600000000 / ( impulsFactor * timeInterval * 60 )
+			print "This is a water sensor. measurement value is: %s m3" % value
 		elif ( b'\x81' <= receivedData[3] <= b'\x89' ):
-			print "this is a gas sensor"
+			value = 3600000 / ( impulsFactor * timeInterval )
+			print "This is a gas sensor. measurement value is: %s m3" % value
 		elif ( b'\x01' <= receivedData[3] <= b'\xff' ):
-			print "this is an electricity sensor"
-
-
+			value = 3600000000 / ( impulsFactor * timeInterval )
+			print "This is an electricity sensor. measurement value is: %s Watt" % value
 
 	#when trailing byte is 40h instead of 41h, then the info is the 'timeout' info for where there were no measurements for that sensor
 	print ""
@@ -99,9 +117,9 @@ while(True):
 		data +=gaugeSocket.recv(512)
 		print "waiting for more data"
 	print "[%s] received packet of size %d" % (time.strftime('%Y-%m-%d %H:%M:%S'), len(data))
-	print " in hex: ",
-	for x in data:
-		print ("%s" % x.encode('hex')),
+	#print " in hex: ",
+	#for x in data:
+	#	print ("%s" % x.encode('hex')),
 	print ""
 	analyse(data)
 
